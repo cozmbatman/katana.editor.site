@@ -29,3 +29,25 @@ footer {
 footer p {
   margin-bottom: 0;
 }
+
+.text-toolbar {
+  width:400px;
+}
+
+.code-content {
+  color:#000;
+  padding-top:0;
+  padding-bottom:0;
+}
+.kword {
+  color:#9b4dca;
+  font-weight: 700;
+}
+.cmnt {
+  font-style: italic; 
+  font-weight: 300;
+  opacity: .6;
+}
+.enum {
+  color:#9b4dca;
+}

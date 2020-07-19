@@ -29,6 +29,55 @@
     <div class="container">
       <div class="row">
         <div class="column">
+        <h3 class="title">How to use</h3>
+        <pre class="code prettyprint">
+          <code class="code-content">
+<span class="cmnt">&lt;!-- Themed stylesheet --&gt;</span>
+&lt;<span class="kword">link rel</span>="stylesheet" <span class="kword">href</span>="public/build/app.css" /&gt;
+
+<span class="cmnt">&lt;!-- Include Default fonts --&gt;</span>
+
+<span class="cmnt">&lt;!-- Bundled script --&gt;</span>
+&lt;<span class="kword">script src</span>="public/build/katana.js"&gt;&lt;/<span class="kword">script</span>&gt;
+          </code>
+        </pre>
+        <pre class="code prettyprint">
+          <code class="code-content">
+&lt;<span class="kword">script type</span>="javascript"&gt;
+<span class="cmnt">// Configuration options</span>
+<span class="kword">const</span> katanaObj = {
+  el: '#editor', <span class="cmnt">// Id of element to attach to</span>
+  mode: '<span class="enum">write</span>',
+  base_content_options: ['<span class="enum">image</span>', '<span class="enum">video</span>', '<span class="enum">section</span>'], <span class="cmnt">// Content toolbar options</span>
+  editorType: '<span class="enum">blog</span>', <span class="cmnt">// blog | publication </span>
+  enableDraft: false, <span class="cmnt">// When enabled lets you subscribe to changes </span>
+  image : {
+    upload: false,
+    url: '/upload'
+  },
+  embed: {
+    enabled: false,
+    url: ''
+  },
+  placeholders: {
+    title: 'Title here',
+    subtitle: 'Start with introduction ..',
+    embed: 'Paste a YouTube video link, and press Enter'
+  }
+};
+<span class="kword">const</span> editor = <span class="kword">new</span> Katana.Editor(katanaObj);
+editor.init(() => {});
+&lt;/<span class="kword">script</span>&gt;
+          </code>
+        </pre>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="features section">
+    <div class="container">
+      <div class="row">
+        <div class="column">
           <h3 class="title">Editor modes</h3>
           <p>Editor can be initalized in various modes to support different feature set</p>
           <ul>
@@ -47,7 +96,8 @@
         <div class="column">
           <h3 class="title">Text formatting</h3>
           <p>Supports following formatting options out of the box</p>
-          <dt>
+          <img src="public/images/text_toolbar.png" class="image text-toolbar" alt="Text toolbar options"/>
+          <dl>
               <dd><h1>Header 1</h1></dd>
               <dd><h2>Header 2</h2></dd>
               <dd><h3>Header 3</h3></dd>
@@ -55,10 +105,9 @@
               <dd><blockquote>blockquote</blockquote></dd>
               <dd><strong>Strong</strong></dd>
               <dd><em>Emphasis</em></dd>
+              <dd>Text align</dd>
               <dd><strong><em>Strong emphasis</em></strong></dd>
               <dd><a href="#">Link</a></dd>
-              <dd></dd>
-            </dt>
           </dl>
         </div>
       </div>
