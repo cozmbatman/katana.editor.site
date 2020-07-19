@@ -44,29 +44,29 @@
         <pre class="code prettyprint">
           <code class="code-content">
 &lt;<span class="kword">script type</span>="javascript"&gt;
-<span class="cmnt">// Configuration options</span>
-<span class="kword">const</span> katanaObj = {
-  el: '#editor', <span class="cmnt">// Id of element to attach to</span>
-  mode: '<span class="enum">write</span>',
-  base_content_options: ['<span class="enum">image</span>', '<span class="enum">video</span>', '<span class="enum">section</span>'], <span class="cmnt">// Content toolbar options</span>
-  editorType: '<span class="enum">blog</span>', <span class="cmnt">// blog | publication </span>
-  enableDraft: false, <span class="cmnt">// When enabled lets you subscribe to changes </span>
-  image : {
-    upload: false,
-    url: '/upload'
-  },
-  embed: {
-    enabled: false,
-    url: ''
-  },
-  placeholders: {
-    title: 'Title here',
-    subtitle: 'Start with introduction ..',
-    embed: 'Paste a YouTube video link, and press Enter'
-  }
-};
-<span class="kword">const</span> editor = <span class="kword">new</span> Katana.Editor(katanaObj);
-editor.init(() => {});
+  <span class="cmnt">// Configuration options</span>
+  <span class="kword">const</span> katanaObj = {
+    el: '#editor', <span class="cmnt">// Id of element to attach to</span>
+    mode: '<span class="enum">write</span>',
+    base_content_options: ['<span class="enum">image</span>', '<span class="enum">video</span>', '<span class="enum">section</span>'], <span class="cmnt">// Content toolbar options</span>
+    editorType: '<span class="enum">blog</span>', <span class="cmnt">// blog | publication </span>
+    enableDraft: false, <span class="cmnt">// When enabled lets you subscribe to changes </span>
+    image : {
+      upload: false,
+      url: '/upload'
+    },
+    embed: {
+      enabled: false,
+      url: ''
+    },
+    placeholders: {
+      title: 'Title here',
+      subtitle: 'Start with introduction ..',
+      embed: 'Paste a YouTube video link, and press Enter'
+    }
+  };
+  <span class="kword">const</span> editor = <span class="kword">new</span> Katana.Editor(katanaObj);
+  editor.init(() => {});
 &lt;/<span class="kword">script</span>&gt;
           </code>
         </pre>
@@ -128,6 +128,46 @@ editor.init(() => {});
       </div>
     </div>
   </section>
+
+  <section class="features section">
+    <div class="container">
+      <div class="row">
+        <div class="column">
+          <h3 class="title">Image Embed</h3>
+          <img src="public/images/image_toolbar.png" class="image image-toolbar"/>
+          <ul>
+            <li>Default position</li>
+            <li>Text inset</li>
+            <li>Page width</li>
+            <li>Text over background with parallax effect</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features section">
+    <div class="container">
+      <div class="row">
+        <div class="column">
+          <h3 class="title">Image Grid</h3>
+        </div>
+      </div>
+    </div>
+    <img src="public/images/image_grid.png" class="image image-grid"/>
+    <div class="container">
+      <div class="row">
+        <div class="column" style="padding-top:15px;">
+          <p>Image grid with multiple layout options</p>
+          <ul>
+            <li>Centered Grid</li>
+            <li>Page width </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="features section" style="min-height:50vh;">
     <div class="container">
       <div class="row">
@@ -158,7 +198,7 @@ editor.init(() => {});
 
   <footer class="footer">
     <section class="container">
-      <p class="copyright">Made with ♥ in India. Site built using <a href="https://milligram.io/" target="_blank">Milligram</a></p>
+      <p class="copyright">Made with ♥ in India. Site built using <a href="https://milligram.io/" target="_blank">Milligram</a>, Images courtsey <a href="https://unsplash.me">Unsplash.me</a></p>
     </section>
   </footer>
 
