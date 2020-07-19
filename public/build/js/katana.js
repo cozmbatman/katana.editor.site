@@ -91,22 +91,29 @@
   if (!Element.prototype.prev) {
     Element.prototype.prev = function(s) {
       let el = this;
-      while(el !== null && el.nodeType === 1) {
+      let all = [];
+      while(el !== null) {
         el = el.previousElementSibling || el.previousSibling;
-        if(el.matches(s)) return el;
+        if(el != null && el.nodeType === 1 && el.matches(s)) {
+          all.push(el);
+        }
       }
-      return null;
+      //TODO maybe revere order of array
+      return all.length == 0 ? null : (all.length == 1 ? all[0] : all);
     }
   }
 
   if (!Element.prototype.next) {
     Element.prototype.next = function(s) {
       let el = this;
-      while(el !== null && el.nodeType === 1) {
+      let all = [];
+      while(el !== null) {
         el = el.nextElementSibling || el.nextSibling;
-        if (el.matches(s)) return el;
+        if (el != null && el.nodeType === 1 && el.matches(s)) {
+          all.push(el);
+        }
       }
-      return null;
+      return all.length == 0 ? null : (all.length == 1 ? all[0] : all);
     }
   };
 
@@ -670,9 +677,14 @@
   };
 
   utils.prototype.prependNode = (el, refNode) => {
-    if(refNode != null && refNode.parentNode != null) {
-      return refNode.parentNode.insertBefore(el, refNode.parentNode.firstElementChild);
+    if(typeof el.length == 'undefined') {
+      el = [el];
     }
+    el.forEach(e => {
+      if(refNode != null && refNode.parentNode != null) {
+        return refNode.parentNode.insertBefore(e, refNode.parentNode.firstElementChild);
+      }
+    })
     return null;
   };
 
@@ -1003,6 +1015,38 @@
       return this.setEvent(u.__result(this, 'events'));
     };
 
+    const _SubWrap = function(name, cb, set) {
+      this.name = name;
+      this.cb = cb;
+      this.set = set;
+    }
+    _SubWrap.prototype.execute = function(ev) {
+      this.cb(ev);
+    }
+    _SubWrap.prototype.release = function() {
+      this.cb = null;
+      this.set.clear(this);
+    }
+
+    Base.prototype.subscribe = function(name, cb) {
+      if(typeof this.streamHandlers[name] === 'undefined') {
+        this.streamHandlers[name] = new Set();
+      }
+      const sub = new _SubWrap(name, cb, this.streamHandlers[name]);
+      this.streamHandlers[name].add(sub);
+      return sub;
+    };
+
+    Base.prototype.notifySubscribers = function(name, ev) {
+      if(typeof this.streamHandlers[name] === 'undefined') {
+        return;
+      }
+      const entries = this.streamHandlers[name].entries();
+      for(const [k, v] of entries) {
+        v.execute(ev);
+      }
+    }
+
     return Base;
   })();
 
@@ -1161,12 +1205,12 @@
           
           // 'copy':'handleCopyEvent',
           
+          "click .item-controls-cont .action": "handleImageActionClick",
+          "click .markup-figure-anchor": "handleFigureAnchorClick",
+
           "click .item-figure .padding-cont": "handleGrafFigureSelectImg",
           "click .with-background .table-view": "handleGrafFigureSelectImg",
           "keyup .item-figure .caption": "handleGrafFigureTypeCaption",
-
-          "click .markup-figure-anchor": "handleFigureAnchorClick",
-          "click .item-controls-cont .action": "handleImageActionClick",
 
           'dragover': 'handleDrag',
           'drop' : 'handleDrop',
@@ -1294,7 +1338,7 @@
       this.appendParallax();
 
       if (this.mode == 'write') {
-        const enabled = this.editorOpts && this.editorOpts.enableDraft ? this.editorOpts.enableDraft : true;
+        const enabled = this.editorOpts && typeof this.editorOpts.enableDraft !== 'undefined' ? this.editorOpts.enableDraft : true;
         if(enabled) {
           this.committer = new Katana.ModelFactory({editor: this, mode: 'write'});
           this.committer.manage(true);
@@ -1335,38 +1379,6 @@
         document.addEventListener('selectionchange', this.handleSelectionChange);
       }
     };
-
-    const _SubWrap = function(name, cb, set) {
-      this.name = name;
-      this.cb = cb;
-      this.set = set;
-    }
-    _SubWrap.prototype.execute = function(ev) {
-      this.cb(ev);
-    }
-    _SubWrap.prototype.release = function() {
-      this.cb = null;
-      this.set.clear(this);
-    }
-
-    Editor.prototype.subscribe = function(name, cb) {
-      if(typeof this.streamHandlers[name] === 'undefined') {
-        this.streamHandlers[name] = new Set();
-      }
-      const sub = new _SubWrap(name, cb, this.streamHandlers[name]);
-      this.streamHandlers[name].add(sub);
-      return sub;
-    };
-
-    Editor.prototype.notifySubscribers = function(name, ev) {
-      if(typeof this.streamHandlers[name] === 'undefined') {
-        return;
-      }
-      const entries = this.streamHandlers[name].entries();
-      for(const [k, v] of entries) {
-        v.execute(ev);
-      }
-    }
 
     Editor.prototype.addBlanktoTargets = function() {
       var anchors = this.elNode.querySelectorAll('a');
@@ -2144,7 +2156,7 @@
       if (element.hasClass('block-grid-caption')) {
         const bg = element.closest('.block-grid');
         if(bg) {
-          bd.addClass('grid-focused');
+          bg.addClass('grid-focused');
         }
       }
 
@@ -3677,7 +3689,7 @@
     
         }
 
-        if(anchor_node.length && anchor_node.querySelectorAll('.placeholder-text').length) {
+        if(anchor_node != null && anchor_node.querySelectorAll('.placeholder-text').length) {
           e.preventDefault();
           anchor_node.addClass('item-empty');
           anchor_node.innerHTML = '<br />';
@@ -3714,7 +3726,7 @@
           return false;
         }
 
-        if (parent.hasClass("item-li") && this.getCharacterPrecedingCaret().length === 0) {
+        if (parent != null && parent.hasClass("item-li") && this.getCharacterPrecedingCaret().length === 0) {
           return this.handleListBackspace(parent, e);
         }
 
@@ -3852,8 +3864,8 @@
 
       this.handleTextSelection(anchor_node);
       if ([BACKSPACE, SPACEBAR, ENTER].indexOf(e.which) != -1) {
-        if (anchor_node.hasClass("item-li")) {
-          this.removeSpanTag($anchor_node);
+        if (anchor_node != null && anchor_node.hasClass("item-li")) {
+          this.removeSpanTag(anchor_node);
         }
       }
 
@@ -4093,9 +4105,8 @@
       return this.scrollTo(new_paragraph);
     };
 
-    Editor.prototype.replaceWith = function(element_type, from_element) {
-      var new_paragraph;
-      new_paragraph = u.generateElement("<" + element_type + " class='item item-" + element_type + " item-empty item-selected'><br/></" + element_type + ">");
+    Editor.prototype.replaceWith = function(etype, from_element) {
+      const new_paragraph = u.generateElement(`<${etype} class='item item-"${etype}" item-empty item-selected'><br/></${etype}>`);
       from_element.replaceWith(new_paragraph);
       this.setRangeAt(new_paragraph);
       this.scrollTo(new_paragraph);
@@ -4230,6 +4241,7 @@
 
       if (!toGrid) {
         const fc = figure.classList;
+        //TODO
         fc.remove('figure-in-row can-go-right can-go-down can-go-left');
       }
     };
@@ -4253,14 +4265,13 @@
             this.moveFigureInsideGrid(figure, nextColumn, true);
             toGrid = true;
           } else if (nextColumn.hasClass('center-column')) {  // next is text based center clumn.. prepend item there..
-            u.prependNode(figure, nextColumn);
-
+            nextColumn.insertBefore(figure, nextColumn.firstChild);
           } else if (nextColumn.hasClass('full-width-column')) { //next is full width image..move image to next column after that..
             var nextAfterFW = nextColumn.nextElementSibling;
             if (nextAfterFW != null) { // we have something after next column
               if (nextAfterFW.hasClass('center-column')) { // its centered column
-                u.prependNode(figure, nextAfterFW);
-
+                nextAfterFW.insertBefore(figure, nextAfterFW.firstChild);
+                //u.prependNode(figure, nextAfterFW);
               } else if (nextAfterFW.hasClass('full-width-column') || nextAfterFW.hasClass('block-grid')) { // anotehr full width here..or block grid put a center column inbetween and put figure there
                 var centerColumn = this.pushCenterColumn(nextAfterFW, true);
                 centerColumn.appendChild(figure);
@@ -4271,8 +4282,7 @@
       }
 
       if (!toGrid) {
-        const fcl = figure.classList;
-        fcl.remove('can-go-left can-go-right can-go-down figure-in-row');
+        figure.removeClass('can-go-left can-go-right can-go-down figure-in-row');
       }
     };
 
@@ -4286,14 +4296,12 @@
 
         var figures = row.querySelectorAll('.item-figure');
 
-        const evnt = new CustomEvent('Katana.Images.Restructure', {
-          type: 'Katana.Images.Restructure',
+        this.notifySubscribers('Katana.Images.Restructure', {
           container: row,
           count: figures.length,
           figures: figures
-        });
+        })
 
-        this.elNode.dispatchEvent(evnt);
       } else {
         var row = grid.querySelector('.block-grid-row:last-child');
         figure.addClass('figure-in-row');
@@ -4301,14 +4309,12 @@
 
         var figures = row.querySelectorAll('.item-figure');
 
-        const evnt = new CustomEvent('Katana.Images.Restructure', {
-          type: 'Katana.Images.Restructure',
+        this.notifySubscribers('Katana.Images.Restructure', {
           container: row,
           count: figures.length,
           figures: figures
         });
 
-        this.elNode.dispatchEvent(evnt);
       }
     };
 
@@ -4928,16 +4934,18 @@
       }
 
       setTimeout(() => {
-        var pos;
-          pos = u.getImageSelectionDimension();  
+          var pos = u.getImageSelectionDimension();  
           this.image_toolbar.render();
+          this.image_toolbar.show();
           this.relocateImageToolbar(pos);
-          return this.image_toolbar.show();
-      }, 10);
+      }, 16);
 
     };
 
     Editor.prototype.relocateImageToolbar = function (position) {
+      if(position == null) {
+        return;
+      }
       var height, left, padd, top, scrollTop;
       const ebr = this.image_toolbar.elNode.getBoundingClientRect();
 
@@ -4945,7 +4953,7 @@
       padd = ebr.width / 2;
       top = position.top - height;
       left = position.left + (position.width / 2) - padd;
-      scrollTop = window.scrollTop;
+      scrollTop = window.pageYOffset;
 
       if (scrollTop > top) {
         top = scrollTop;
@@ -4997,13 +5005,13 @@
       figure.focus();
     };
 
-    Editor.prototype.handleGrafFigureSelectImg = function (ev) {
+    Editor.prototype.handleGrafFigureSelectImg = function (ev, matched) {
       var element;
       var text = this.getSelectedText();
       if (text && text.killWhiteSpace().length > 0) {
         return false;
       }
-      element = ev.currentTarget;
+      element = matched ? matched : ev.currentTarget;
       var sec = element.closest('.with-background');
       if (sec != null) {
         this.selectFigure(sec);
@@ -5067,10 +5075,12 @@
       }
     };
 
-    Editor.prototype.handleImageActionClick = function (ev) {
-      var tg = ev.currentTarget,
+    Editor.prototype.handleImageActionClick = function (ev, matched) {
+      var tg = matched ? matched : ev.currentTarget,
         action = tg.attr('data-action'),
         figure = tg.closest('figure');
+
+        u.stopEvent(ev);
       
       switch(action) {
         case 'remove':
@@ -5110,11 +5120,9 @@
         case 'addpic':
           var row = figure.closest('.block-grid-row');
           if (row != null) {
-            const aEvent = new CustomEvent('Katana.Images.Add', {type: 'Katana.Images.Add', row: row});
-            this.elNode.dispatchEvent(aEvent);
+            this.notifySubscribers('Katana.Images.Add', {row})
           } else {
-            const fEvent = new CustomEvent('Katana.Images.Add', {type: 'Katana.Images.Add', figure: figure});
-            this.elNode.dispatchEvent(fEvent);
+            this.notifySubscribers('Katana.Images.Add', {figure})
           }
           
         break;
@@ -6066,7 +6074,7 @@
         if (b.template) {
           menu += b.template();
         } else {
-          menu += `<button class="inlineTooltip-button scale" title="${b.title}" data-action="inline-menu-${b.action} ${data_action_value}"> <span class="tooltip-icon ${b.icon}"></span> </button>`;
+          menu += `<button class="inlineTooltip-button scale" title="${b.title}" data-action="inline-menu-${b.action}" ${data_action_value}"> <span class="tooltip-icon ${b.icon}"></span> </button>`;
         }
         return menu;
       });
@@ -6221,10 +6229,6 @@
 
       this.pushMultipleImageContainer = u.__bind(this.pushMultipleImageContainer, this);
       
-      /*this.popup = document.querySelector('#placeable_popup');
-      this.popupTitle = this.popup.querySelector('[place="title"]');
-      this.popupMessage = this.popup.querySelector('[place="message"]');*/
-
       return Images.__super__.constructor.apply(this, arguments);
     }
 
@@ -6245,11 +6249,11 @@
 
       _this = this;
 
-      this.editorEl.addEventListener('Katana.Images.Restructure', function (event) {
+      this.current_editor.subscribe('Katana.Images.Restructure', (event) => {
         _this.fixPositioningForMultipleImages(event.container, event.figures, event.count);
       });
 
-      this.editorEl.addEventListener('Katana.Images.Add', function (event) {
+      this.current_editor.subscribe('Katana.Images.Add', (event) => {
         if (typeof event.row != 'undefined') {
           _this.addImagesInRow = event.row;  
           _this.imageSelect(event);
@@ -6257,6 +6261,7 @@
           _this.imageSelect(event);
         }
       });
+
       return this;
     };
 
@@ -6524,8 +6529,10 @@
           fig.attr("data-width", this.width);
         }
 
-        if (this.width < 760) {
+        if (this.naturalWidth < 760) {
           figure.addClass('n-fullSize');
+        } else {
+          figure.removeChild('n-fullSize');
         }
         
         if (typeof srcToUse == 'undefined') {
@@ -6605,7 +6612,8 @@
           new_tmpl.addClass('figure-in-row');
 
           if(cont.contains(node)) {
-            replaced_node = node.parentNode.insertBefore(new_tmpl, node);
+            node.insertAdjacentElement('afterend', new_tmpl);
+            replaced_node = new_tmpl; //node.parentNode.insertBefore(new_tmpl, node);
           }else {
             replaced_node = new_tmpl;
             cont.appendChild(replaced_node);
@@ -6613,9 +6621,7 @@
         } else {
           replaced_node = node.parentNode.insertBefore(new_tmpl, node);
         }
-
-        new_tmpl.addClass('item-uploading');
-        
+  
         img_tag = new_tmpl.querySelector('img.item-image');
         if(img_tag != null) {
           img_tag.attr('src', e.target.currentSrc ? e.target.currentSrc : e.target.result);
@@ -6632,11 +6638,14 @@
           rig.attr("data-width", this.width);
         }
 
-        if (img_tag.width < 700) {
+        if (img_tag.naturalWidth < 700) {
           replaced_node.addClass('n-fullSize');
+        } else {
+          replaced_node.removeClass('n-fullSize');
         }
 
         if(self.current_editor.image_options && self.current_editor.image_options.upload) {
+          new_tmpl.addClass('item-uploading');
           // release blob when actual image uploads starts
           window.URL.revokeObjectURL(this.src); // Clean up after yourself
         }
@@ -6858,12 +6867,15 @@
     };
 
     Images.prototype.fixPositioningForMultipleImages = function (cont, figures, count)  {
+      if(cont == null) {
+        return;
+      }
       var ratios = [],
           rsum = 0,
           height, 
           len = figures.length,
           widths = [],
-          totalWidth = cont.width(),
+          totalWidth = cont.getBoundingClientRect().width,
           i = 0;
 
       for (i; i < len; i = i + 1) {
@@ -6903,7 +6915,7 @@
       }
 
       if (count == 1) {
-        let pcA = figures.querySelectorAll('.padding-cont');
+        let pcA = figures[0].querySelectorAll('.padding-cont');
         pcA.forEach(pc => {
           pc.removeAttribute('style');
         });
@@ -6953,8 +6965,10 @@
       }
 
       var new_tmpl = this.blockGridTemplate(count);
-      new_tmpl.insertAfter(parentContainer);
-      bottomContainer.insertAfter(new_tmpl);
+      parentContainer.insertAdjacentElement('afterend', new_tmpl);
+      //new_tmpl.insertAfter(parentContainer);
+      new_tmpl.insertAdjacentElement('afterend', bottomContainer);
+      //bottomContainer.insertAfter(new_tmpl);
 
       this.addImagesInContainer = true;
       bottomContainer.prepend(item);
@@ -8416,15 +8430,20 @@
         _this.deactivateAll();          
       });
 
-      var w = ('innerWidth' in window) ? window.innerWidth : $(window).width();
+      var w = ('innerWidth' in window) ? window.innerWidth : u.getWindowWidth();
       this.smallScreen = w <= 480 ? true : false;
-      var layoutWidth = $('.center-column').width();
+      const cc = document.querySelector('.center-column');
+      var layoutWidth = 1020;
+      if(cc != null) {
+        layoutWidth = cc.getBoundingClientRect().width;
+      }
+
       var cen = (w - layoutWidth) / 2,
           tot = (cen + layoutWidth + 355);
       this.llShift = false;
       if (tot > w) {
         this.llShift = false;
-        $('body').addClass('notes-ll-shift');
+        document.querySelector('body').addClass('notes-ll-shift');
       }
 
       this.readNotes();
@@ -8512,14 +8531,15 @@
 
     Notes.prototype.activateCloser = function(against) {
       this.commentsCloserElement.addClass('active');
-      var w = $(window).width();
-      var o = against.offset().left + against.width();
-      this.commentsCloserElement.css({right: (w - o) + 'px'});
+      var w = u.getWindowWidth();
+      const box = against.getBoundingClientRect();
+      var o = box.left + box.width;
+      this.commentsCloserElement.style.right = (w - o) + 'px';
     };
 
     Notes.prototype.deactivateCloser = function() {
       this.commentsCloserElement.removeClass('active');
-      $('body').removeClass('notes-opened');
+      document.querySelector('body').removeClass('notes-opened');
     };
 
     Notes.prototype.deactivateAll = function () {
@@ -8585,9 +8605,13 @@
     };
 
     Notes.prototype.calculateIconPosition = function (against) {
-      var aoffset = against.offset();
+      const box = against.getBoundingClientRect();
+      var aoffset = {
+        top: box.top + document.body.scrollTop,
+        left: box.left + document.body.scrollLeft
+      };
       var top = aoffset.top,
-          left = aoffset.left + against.width() + 5;
+          left = aoffset.left + box.width + 5;
       if (this.smallScreen) {
         if (left < 790) {
           left = 800;
@@ -8805,7 +8829,7 @@
       this.edit_url = opts.info.edit_url || '';
       this.reply_url = opts.info.reply_url || '';
       this.privacy_url = opts.info.privacy_url || '';
-      this.smallScreen = $(window).width() <= 480 ? true : false;
+      this.smallScreen = u.getWindowWidth() <= 480 ? true : false;
       this.currentUser = typeof Mefacto.User != 'undefined' && Mefacto.User.id != 0 ? Mefacto.User.id : false;
     };
 
@@ -9693,7 +9717,7 @@
             <ul class='mf-menu-buttons'>`;
 
         this.config.buttons.forEach((item) => {
-          html += `<li class='mf-menu-button'><i class="mf-icon mfi-${item.i}" data-action=" ${item.a}"></i></li>`;
+          html += `<li class='mf-menu-button'><i class="mf-icon mfi-${item.i}" data-action="${item.a}"></i></li>`;
         });
         html += `</ul>`;
         return html;  
@@ -9880,14 +9904,12 @@
         for (var i = 0; i < rows.length; i = i + 1) {
           var row = rows[i];
           var figures = row.querySelectorAll('.item-figure');
-          const evnt = new CustomEvent('Katana.Images.Restructure', {
-            type: 'Katana.Images.Restructure',
+          this.current_editor.notifySubscribers('Katana.Images.Restructure', {
             container: row,
             count: figures.length,
             figures: figures
           });
 
-          this.current_editor.elNode.dispatchEvent(evnt);
         }
       }
     };
@@ -9900,13 +9922,11 @@
         for (var i = 0; i < rows.length; i = i + 1) {
           var row = rows[i];
           var figures = row.querySelectorAll('.item-figure');
-          const evnt = new CustomEvent('Katana.Images.Restructure', {
-            type: 'Katana.Images.Restructure',
+          this.current_editor.notifySubscribers('Katana.Images.Restructure', {
             container: row,
             count: figures.length,
             figures: figures
           });
-          this.current_editor.elNode.dispatchEvent(evnt);
         }
       }
     }    
@@ -9931,7 +9951,9 @@
             prevContainer.appendChild(sel);
           }else {
             var ct = u.generateElement(this.current_editor.getSingleLayoutTempalte());
-            ct.insertBefore(curr);
+            curr.parentNode.insertBefore(ct, curr);;
+            //curr.insertBefore(ct, curr.firstChild);
+            //ct.insertBefore(curr);
             ct.appendChild(sel);
             prevContainer = ct;
           }
@@ -9943,7 +9965,7 @@
             }
           }
 
-          if(!nextContainer.hasClass('full-width-column')) {
+          if(nextContainer != null && !nextContainer.hasClass('full-width-column')) {
 
             const aNChilds = nextContainer.children;
             const vNChilds = Array.prototype.filter.call(aNChilds, el => { return el.classList.contains('item'); });
@@ -10032,24 +10054,27 @@
         if(nextRow == null) {
           var tmpl = `<div class="block-grid-row" data-name="${u.generateId()}"></div>`;
           tmpl = u.generateElement(tmpl);
-          tmpl.insertAfter(currentRow);
+          currentRow.insertAdjacentElement('afterend', tmpl);
           nextRow = tmpl;
         }
-        u.prependNode(nxtFigures, nextRow);
+        if(typeof nxtFigures.length == 'undefined') {
+          nxtFigures = [nxtFigures];
+        }
+        nxtFigures.forEach(n => {
+          nextRow.insertBefore(n, nextRow.firstChild);
+        });
       }
 
       var stretchRow = `<div class="block-grid-row" data-name="${u.generateId()}" data-paragraph-count="1"></div>`;
       stretchRow = u.generateElement(stretchRow);
       stretchRow.appendChild(figure);
-      stretchRow.insertAfter(currentRow);
+      currentRow.insertAdjacentElement('afterend', stretchRow);
 
-      const reEvnt = new CustomEvent('Katana.Images.Restructure', {
-        type: 'Katana.Images.Restructure',
+      this.current_editor.notifySubscribers('Katana.Images.Restructure', {
         container: stretchRow,
         count: 1,
         figures: [figure]
       });
-      this.current_editor.elNode.dispatchEvent(reEvnt);
 
       // format figure in row just below stretch
       if (nextRow != null) {
@@ -10058,13 +10083,12 @@
           nextRowFigures.forEach(el => {
             el.attr('data-paragraph-count', nextRowFigures.length);
           });
-          const rEvnt = new CustomEvent('Katana.Images.Restructure', {
-            type: 'Katana.Images.Restructure',
+          this.current_editor.notifySubscribers('Katana.Images.Restructure', {
             container: nextRow,
             count: nextRowFigures.length,
             figures: nextRowFigures
           });
-          this.current_editor.elNode.dispatchEvent(rEvnt);
+
         } else {
           nextRow.parentNode.removeChild(nextRow);
         }
@@ -10075,13 +10099,12 @@
         currentRowFigures.forEach(el => {
           el.attr('data-paragraph-count', currentRowFigures.length);
         });
-        const cEvnt = new CustomEvent( 'Katana.Images.Restructure', {
-          type: 'Katana.Images.Restructure',
+        this.current_editor.notifySubscribers( 'Katana.Images.Restructure', {
           container: currentRow,
           count: currentRowFigures.length,
           figures: currentRowFigures
         });
-        this.current_editor.elNode.dispatchEvent(cEvnt);
+
       } else {
         currentRow.parentNode.removeChild(currentRow);
       }
@@ -10096,13 +10119,28 @@
         if (figs.length == 1) {
           // we are the only item.. should breakout from the grid now
           this.current_editor.moveFigureDown(sel);
+          const grid = row.closest('.block-content-inner');
+          const allFig = grid.querySelectorAll('.item-figure');
+          grid.attr('data-paragraph-count', allFig.length);
+          row.parentNode.removeChild(row);
+
+          if(allFig.length == 1) {
+            this._commandGoDownInGrid(allFig[0]);
+          }
+          if(allFig.length == 0) {
+            const section = grid.closest('.block-content');
+            grid.parentNode.removeChild(grid);
+            if(section != null) {
+              this.current_editor.mergeInnerSections(section);
+            }
+          }
           return;
         }
       }
       if (nextRow == null) {
         var tmpl = `<div class="block-grid-row" data-name="${u.generateId()}"></div>`;
         tmpl = u.generateElement(tmpl);
-        tmpl.insertAfter(row);
+        row.insertAdjacentElement('afterend', tmpl);
         nextRow = tmpl;
       }
 
@@ -10111,8 +10149,7 @@
       var newFigs = nextRow.querySelectorAll('.item-figure');
       nextRow.attr('data-paragraph-count', newFigs.length);
 
-      this.current_editor.$el.trigger({
-        type: 'Katana.Images.Restructure',
+      this.current_editor.notifySubscribers('Katana.Images.Restructure',{
         container: nextRow,
         count: newFigs.length,
         figures: newFigs
@@ -10123,8 +10160,7 @@
       } else {
         var figs = row.querySelectorAll('.item-figure');
         row.attr('data-paragraph-count', figs.length);
-        this.current_editor.$el.trigger({
-          type: 'Katana.Images.Restructure',
+        this.current_editor.notifySubscribers('Katana.Images.Restructure',{
           container: row,
           count: figs.length,
           figures: figs
@@ -10136,25 +10172,28 @@
       var currRow = figure.closest('.block-grid-row'),
           prevRow = currRow.prev('.block-grid-row');
 
-      if (prevRow.length == 0 && currRow.querySelectorAll('.item-figure').length == 1) {
+      if (prevRow == null && currRow.querySelectorAll('.item-figure').length == 1) {
         this.current_editor.moveFigureUp(figure);
         return;
       }
 
-      if (prevRow.length == 0) {
+      if (prevRow == null) {
         var tmpl = `<div class="block-grid-row" data-name="${u.generateId()}"></div>`;
         tmpl = u.generateElement(tmpl);
         tmpl.insertBefore(currRow);
         prevRow = tmpl;
       }
 
-      if (prevRow.length) {
+      if(typeof prevRow.length != 'undefined') {
+        prevRow = prevRow[0];
+      }
+
+      if (prevRow != null) {
         prevRow.append(figure);
         var prevFigures = prevRow.querySelectorAll('.item-figure');
         prevRow.attr('data-paragraph-count', prevFigures.length);
 
-        this.current_editor.$el.trigger({
-          type: 'Katana.Images.Restructure',
+        this.current_editor.notifySubscribers('Katana.Images.Restructure', {
           container: prevRow,
           count: prevFigures.length,
           figures: prevFigures
@@ -10163,8 +10202,7 @@
         var currFigures = currRow.querySelectorAll('.item-figure');
         if (currFigures.length) {
           currRow.attr('data-paragraph-count', currFigures.length);
-          this.current_editor.$el.trigger({
-            type: 'Katana.Images.Restructure',
+          this.current_editor.notifySubscribers('Katana.Images.Restructure', {
             container: currRow,
             count: currFigures.length,
             figures: currFigures
@@ -10190,12 +10228,12 @@
         if (direction == 'left') {
           toSwitchWith = sel.prev('.figure-in-row');
           if(toSwitchWith != null) {
-            sel.insertBefore(toSwitchWith);
+            sel.insertAdjacentElement('afterend', toSwitchWith);
           }
         } else if(direction == 'right') { 
           toSwitchWith = sel.next('.figure-in-row');
           if(toSwitchWith != null) {
-            toSwitchWith.insertBefore(sel);
+            toSwitchWith.insertAdjacentElement('afterend', sel);
           }
         } else if(direction == 'down') {
           this._commandGoDownInGrid(sel);
@@ -10310,7 +10348,7 @@
 
         var bgE = this.$el.querySelector('[data-action="background"]');
         if(bgE != null) {
-          bgE.parent('li').addClass('hide');
+          bgE.closest('li').addClass('hide');
         }
 
         var grid = sel.closest('.block-grid');
@@ -10401,7 +10439,7 @@
       for(const name of names) {
         let go = this.$el.querySelector('[data-action="' + name + '"]');
         if(go != null) {
-          let pl = go.parent('li');
+          let pl = go.closest('li');
           if(pl != null) {
             pl.hide();
           }
@@ -10439,8 +10477,7 @@
         var remaining = container.querySelectorAll('.item-figure');
         if (remaining.length) {
           container.attr('data-paragraph-count', remaining.length);
-          this.current_editor.$el.trigger({
-            type: 'Katana.Images.Restructure',
+          this.current_editor.notifySubscribers('Katana.Images.Restructure', {
             container: container,
             count: remaining.length,
             figures: remaining
@@ -10467,9 +10504,17 @@
         
 
       } else {
-        this.current_editor.replaceWith("p", figure);
-        this.current_editor.setRangeAt(document.querySelector(".item-selected"));
+        const itemSelected = this.current_editor.replaceWith("p", figure);
+        const nextItem = itemSelected.next('.item');
+        if(nextItem != null) {
+          itemSelected.parentNode.removeChild(itemSelected);
+          nextItem.addClass('item-selected');
+          this.current_editor.setRangeAt(nextItem);
+        } else {
+          this.current_editor.setRangeAt(document.querySelector(".item-selected"));
+        }
       }
+      this.hide();
     };
 
     ImageToolbar.prototype.unwrapSingleFigure = function (container) {
@@ -10537,7 +10582,10 @@
       height = h;
 
       if (figure.hasClass('figure-in-row')) {
-        maxWidth = figure.closest('.block-grid-row').width();
+        const brg = figure.closest('.block-grid-row');
+        if(brg != null) {
+          maxWidth = brg.getBoundingClientRect().width;
+        } 
       }
       
       if (width > maxWidth) {
