@@ -1,0 +1,31 @@
+body {
+  background-color: #fff;
+}
+main > .section:nth-child(odd) {
+  background-color: #f4f5f6;
+}
+.header .container {
+  border-top: 0;
+  padding-bottom: 7.5rem;
+  padding-top: 7.5rem;
+  position: relative;
+  text-align: center;
+}
+
+.wrapper .container {
+  max-width: 80rem;
+}
+
+.features {
+  border-bottom: .1rem solid #f4f5f6;
+  max-width: 100%;
+  padding-bottom: 7.5rem;
+  padding-top: 7.5rem;
+  width: 100%;
+}
+footer {
+  padding:8rem 0;
+}
+footer p {
+  margin-bottom: 0;
+}
