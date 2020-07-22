@@ -33,12 +33,10 @@
         <pre class="code prettyprint">
           <code class="code-content">
 <span class="cmnt">&lt;!-- Themed stylesheet --&gt;</span>
-&lt;<span class="kword">link rel</span>="stylesheet" <span class="kword">href</span>="public/build/app.css" /&gt;
-
-<span class="cmnt">&lt;!-- Include Default fonts --&gt;</span>
+&lt;<span class="kword">link rel</span>="stylesheet" <span class="kword">href</span>="build_path/css/main.{current_hash}.css" /&gt;
 
 <span class="cmnt">&lt;!-- Bundled script --&gt;</span>
-&lt;<span class="kword">script src</span>="public/build/katana.js"&gt;&lt;/<span class="kword">script</span>&gt;
+&lt;<span class="kword">script src</span>="build_path/main.{current_hash}.js"&gt;&lt;/<span class="kword">script</span>&gt;
           </code>
         </pre>
         <pre class="code prettyprint">
@@ -46,7 +44,7 @@
 &lt;<span class="kword">script type</span>="javascript"&gt;
   <span class="cmnt">// Configuration options</span>
   <span class="kword">const</span> katanaObj = {
-    el: '#editor', <span class="cmnt">// Id of element to attach to</span>
+    selector: '#editor', <span class="cmnt">// Id of element to attach to</span>
     mode: '<span class="enum">write</span>',
     base_content_options: ['<span class="enum">image</span>', '<span class="enum">video</span>', '<span class="enum">section</span>'], <span class="cmnt">// Content toolbar options</span>
     editorType: '<span class="enum">blog</span>', <span class="cmnt">// blog | publication </span>
@@ -65,7 +63,7 @@
       embed: 'Paste a YouTube video link, and press Enter'
     }
   };
-  <span class="kword">const</span> editor = <span class="kword">new</span> Katana.Editor(katanaObj);
+  <span class="kword">const</span> editor = <span class="kword">new</span> KatanaEditor(katanaObj);
   editor.init(() => {});
 &lt;/<span class="kword">script</span>&gt;
           </code>
